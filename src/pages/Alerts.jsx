@@ -9,12 +9,13 @@ const initials = (name) =>
 export default function Alerts() {
   const [alerts, setAlerts] = useState([])
   const [resolving, setResolving] = useState(null)
+  const [generatingEFIR, setGeneratingEFIR] = useState(null)
   const socketRef = useRef(null)
 
   useEffect(() => {
     api.get('/api/police/alerts').then(({ data }) => setAlerts(data))
 
-    socketRef.current = io('http://localhost:4000')
+    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:4000')
 
     socketRef.current.on('sos:new', (tourist) => {
       setAlerts(prev => {
@@ -40,6 +41,29 @@ export default function Alerts() {
       console.error(err)
     } finally {
       setResolving(null)
+    }
+  }
+
+  const handleGenerateEFIR = async (t) => {
+    setGeneratingEFIR(t._id)
+    try {
+      const { data } = await api.post(`/api/police/efir/${t._id}`)
+      
+      // Download as text file
+      const blob = new Blob([data.efir], { type: 'text/plain' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `eFIR_${t.touristId}_${new Date().toISOString().split('T')[0]}.txt`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error(err)
+      alert('Failed to generate e-FIR')
+    } finally {
+      setGeneratingEFIR(null)
     }
   }
 
@@ -86,6 +110,10 @@ export default function Alerts() {
 
             <div className="alert-card-details">
               <div className="alert-detail">
+                <p className="alert-detail-label">District</p>
+                <p className="alert-detail-value">{t.district || t.place}</p>
+              </div>
+              <div className="alert-detail">
                 <p className="alert-detail-label">Destination</p>
                 <p className="alert-detail-value">{t.place}</p>
               </div>
@@ -102,10 +130,6 @@ export default function Alerts() {
                 <p className="alert-detail-value">{t.hotelId?.name || '—'}</p>
               </div>
               <div className="alert-detail">
-                <p className="alert-detail-label">Check-out</p>
-                <p className="alert-detail-value">{t.checkOut}</p>
-              </div>
-              <div className="alert-detail">
                 <p className="alert-detail-label">Tourist ID</p>
                 <p className="alert-detail-value">{t.touristId}</p>
               </div>
@@ -118,6 +142,13 @@ export default function Alerts() {
                 disabled={resolving === t._id}
               >
                 {resolving === t._id ? 'Resolving...' : 'Mark Resolved'}
+              </button>
+              <button
+                className="alert-btn-efir"
+                onClick={() => handleGenerateEFIR(t)}
+                disabled={generatingEFIR === t._id}
+              >
+                {generatingEFIR === t._id ? 'Generating...' : 'Generate e-FIR'}
               </button>
             </div>
           </div>

@@ -183,3 +183,23 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+.alert-btn-efir {
+  padding: 8px 16px;
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.alert-btn-efir:hover {
+  background: #6d28d9;
+}
+
+.alert-btn-efir:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
