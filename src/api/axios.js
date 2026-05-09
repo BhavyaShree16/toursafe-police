@@ -1,7 +1,9 @@
 import axios from 'axios'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000',
+  baseURL: BASE_URL,
 })
 
 api.interceptors.request.use((config) => {
@@ -9,5 +11,12 @@ api.interceptors.request.use((config) => {
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
+
+// Keep Render backend alive — ping every 14 minutes
+if (import.meta.env.PROD) {
+  setInterval(() => {
+    fetch(`${BASE_URL}/api/health`).catch(() => {})
+  }, 14 * 60 * 1000)
+}
 
 export default api
